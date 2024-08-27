@@ -1,4 +1,4 @@
-# spotify-running-app
+# spotify-running-app (project 3)
 
 Stack ideas:
  - Dart / Flutter

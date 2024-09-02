@@ -1,12 +1,15 @@
-# spotify-running-app (project 3)
+# spotify-running-app
 
-Stack ideas:
- - Dart / Flutter
+A cross-platform app which creates Spotify/mp3 playlists based
+on given parameters for running.
 
-Resources:
- - https://pub.dev/packages/spotify
- - https://developer.spotify.com/documentation/web-api
+To build and launch the development Docker container, just run
+```sh
+make run
+```
+from this directory.
 
-Misc. Notes:
- - Maybe integrate w/ heart rate monitor?
- - Also provide support for `mp3` files
+# License
+
+This software was developed at Colorado Mesa University under
+the MIT license.

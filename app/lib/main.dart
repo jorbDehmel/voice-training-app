@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:spotify/spotify.dart';
+import 'package:sqlite3/sqlite3.dart';
 
 void main() {
   runApp(const MyApp());

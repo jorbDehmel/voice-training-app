@@ -5,28 +5,26 @@ FROM ubuntu:latest
 ARG USER=user
 ARG PASSWORD=password
 
+# Basic system setup
 USER root
-RUN apt update
-RUN apt install -y nano sudo bash wget tar xz-utils git clang cmake ninja-build pkg-config libgtk-3-dev android-sdk
+RUN apt-get update
+RUN apt install -y nano sudo bash wget curl tar xz-utils git clang cmake ninja-build pkg-config libgtk-3-dev android-sdk
 
+# User setup
 RUN useradd -ms /bin/bash $USER
 RUN echo "$USER:$PASSWORD" | chpasswd && adduser $USER sudo
-
-USER $USER
-
 WORKDIR /home/$USER
+
+# Flutter install
+USER $USER
 RUN wget https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.24.1-stable.tar.xz
 RUN tar -xf *.xz
-RUN rm *.xz
-
 USER root
-RUN mv flutter /home/flutter
-USER $USER
+RUN mv flutter /home/flutter/
 
 RUN git config --global --add safe.directory /home/flutter
 RUN /home/flutter/bin/flutter --disable-analytics
-
-USER root
+RUN /home/flutter/bin/flutter upgrade
 RUN echo "export PATH=\"$PATH:/home/flutter/bin\"" >> /home/$USER/.bashrc
 RUN echo "export PATH=\"$PATH:/home/flutter/bin\"" >> /root/.bashrc
 
@@ -37,6 +35,14 @@ RUN echo deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http:/
 RUN apt update
 RUN apt install -y google-chrome-stable
 
-USER $USER
+# Android SDK install
+RUN wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+RUN unzip commandlinetools-linux-11076708_latest.zip -d android-tools
+RUN mv android-tools/cmdline-tools /usr/lib/andoid-sdk
+RUN rm -rf android-tools *.zip *.xz
 
+# Enter as user
+USER $USER
+RUN git config --global --add safe.directory /home/flutter
+RUN /home/flutter/bin/flutter --disable-analytics
 CMD bash

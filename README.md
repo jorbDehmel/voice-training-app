@@ -1,7 +1,4 @@
-# spotify-running-app
-
-A cross-platform app which creates Spotify/mp3 playlists based
-on given parameters for running.
+# voice-training-app
 
 To build and launch the development Docker container, just run
 ```sh

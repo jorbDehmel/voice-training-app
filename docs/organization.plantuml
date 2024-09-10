@@ -1,0 +1,48 @@
+@startuml organization
+skinparam dpi 300
+
+() RecordingLib
+() FFTLib
+() SQLiteLib
+
+package VoiceAppGUI {
+    class VoiceAnalyzer {}
+
+    package AnalysisPage {
+        class DisplayWidget {}
+        () "navigation" as nav1
+    }
+
+    package PassthroughPage {
+        class PassThroughInterface {}
+        () "navigation" as nav2
+    }
+
+    package GamificationPage {
+        class StateManager {}
+        () "navigation" as nav3
+    }
+
+    package InfoPage {
+        () "navigation" as nav4
+    }
+
+    nav1 - nav2
+    nav1 - nav3
+    nav1 - nav4
+    nav2 - nav3
+    nav2 - nav4
+    nav3 - nav4
+
+    DisplayWidget -- VoiceAnalyzer : Loads frequency information >
+    PassThroughInterface -- VoiceAnalyzer : Gets passthrough with arbitrary delay >
+}
+
+VoiceAnalyzer -- RecordingLib : Gets microphone input from >
+VoiceAnalyzer -- FFTLib : Analyzes input via >
+StateManager -- SQLiteLib : Stores data via >
+
+() main
+main --> AnalysisPage : Default
+
+@enduml

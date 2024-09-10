@@ -25,6 +25,7 @@ RUN mv flutter /home/flutter/
 RUN git config --global --add safe.directory /home/flutter
 RUN /home/flutter/bin/flutter --disable-analytics
 RUN /home/flutter/bin/flutter upgrade
+RUN chown --preserve-root -R $USER /home/flutter
 RUN echo "export PATH=\"$PATH:/home/flutter/bin\"" >> /home/$USER/.bashrc
 RUN echo "export PATH=\"$PATH:/home/flutter/bin\"" >> /root/.bashrc
 

@@ -6,7 +6,10 @@ skinparam dpi 300
 () SQLiteLib
 
 package VoiceAppGUI {
-    class VoiceAnalyzer {}
+    class VoiceAnalyzer {
+        + audio_stream get_with_delay(double seconds)
+        + vocal_stats get_stats()
+    }
 
     package AnalysisPage {
         class DisplayWidget {}

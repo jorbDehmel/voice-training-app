@@ -2,8 +2,7 @@
 Test analysis
 */
 
-import 'package:app/main.dart';
-import 'package:app/analysis.dart';
+import 'package:app/voice_analyzer.dart';
 
 int main() {
   return 0;

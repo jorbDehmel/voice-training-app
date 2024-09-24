@@ -6,13 +6,11 @@ import 'dart:math';
 
 import 'package:app/fwt.dart';
 
-int main() {
-  List<double> v = [1, 2, 3, 4, 5, 6, 7, 8];
-  print('Before transform:  $v');
+int main(List<String> args) {
+  List<double> v = args.map((item) => double.parse(item)).toList();
+  var out = fwt(v);
 
-  fwt(v);
-
-  print('After transform:   $v');
+  print('$out');
 
   return 0;
 }

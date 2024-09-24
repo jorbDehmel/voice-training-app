@@ -2,52 +2,54 @@
 skinparam dpi 300
 
 () RecordingLib
-() FFTLib
+() SoundLibrary
+() FastWaveletTransform
 () SQLiteLib
 
 package VoiceAppGUI {
     class VocalStats {}
 
     class VoiceAnalyzer {
-        + audio_stream get_with_delay(double seconds)
-        + VocalStats get_stats()
+        + VoiceAnalyzer()
+        + VocalStats getSnapshot()
+        + void beginPlayStreamWithDelay(double s)
+        + void endPlayStreamWithDelay()
+    }
+
+    package HomePage {
+        () "navigation" as nav1
     }
 
     package AnalysisPage {
         class DisplayWidget {}
-        () "navigation" as nav1
     }
 
     package PassthroughPage {
         class PassThroughInterface {}
-        () "navigation" as nav2
     }
 
     package GamificationPage {
         class StateManager {}
-        () "navigation" as nav3
     }
 
-    package InfoPage {
-        () "navigation" as nav4
-    }
+    package InfoPage {}
 
-    nav1 - nav2
-    nav1 - nav3
-    nav1 - nav4
-    nav2 - nav3
-    nav2 - nav4
-    nav3 - nav4
+    nav1 --> AnalysisPage
+    nav1 --> PassthroughPage
+    nav1 --> GamificationPage
+    nav1 --> InfoPage
 
-    DisplayWidget -- VoiceAnalyzer : Loads frequency information >
+    DisplayWidget -- VocalStats : Gets snapshots >
+    VocalStats -- VoiceAnalyzer : Loads frequency information >
     PassThroughInterface -- VoiceAnalyzer : Gets passthrough with arbitrary delay >
 }
 
 VoiceAnalyzer -- RecordingLib : Gets microphone input from >
-VoiceAnalyzer -- FFTLib : Analyzes input via >
+VoiceAnalyzer -- SoundLibrary : Plays sound via >
+VoiceAnalyzer -- FastWaveletTransform : Analyzes input via >
 StateManager -- SQLiteLib : Stores data via >
 
 () main
-main --> AnalysisPage : Default
+main --> HomePage : Default
 
 @enduml

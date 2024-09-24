@@ -39,6 +39,8 @@ dependencies:
   record: ^5.1.2
   sqlite3: ^2.4.6
   fftea: ^1.5.0+1
+  sound_library: ^1.0.0
+  waveform_flutter: ^1.0.1
 
 dev_dependencies:
   flutter_test:

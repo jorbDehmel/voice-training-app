@@ -18,71 +18,63 @@ Algorithm via https://link.springer.com/chapter/10.1007/978-3-319-22075-8_7
 From above paper:
 The input of the algorithm is an array v, with 2m+1 elements, containing the
 coefficient sequence to be transformed, and the number of levels m.
-*/
-void fwt(List<double> v, [int m = 0, List<double> h = const []]) {
-  // Handle default depth m
-  if (m == 0) {
-    m = logBase(2.0, v.length.toDouble()).floor() - 1;
-  }
 
-  // Ensure valid input size
-  if (v.length != pow(2, m + 1)) {
+Uses Haar.
+*/
+List<double> fwt(List<double> inp) {
+  // Copy input to output list
+  List<double> output = List.generate(inp.length, (int i) => inp[i]);
+
+  int depth = logBase(2.0, output.length.toDouble()).floor() - 1;
+  if (output.length != pow(2, depth + 1)) {
     throw Exception("Invalid v dimensions! Input size must be power of 2");
   }
 
-  // Handle default (empty) coefficients
-  if (h.isEmpty) {
-    h = getHaarCoefficients(m);
-  }
+  // Compute coefficients
+  List<double> scaling_coeffs = getHaarCoefficients(depth);
+  List<double> wavelet_coeffs = List.filled(scaling_coeffs.length, 0.0);
 
-  // Ensure valid coefficient size
-  else if (h.length != m) {
-    throw Exception("Invalid h dimensions!");
-  }
-
-  // Compute g from h
-  List<double> g = List.filled(h.length, 0.0);
-  for (int i = 0; i < h.length; i++) {
-    g[i] = h[h.length - i - 1];
+  for (int i = 0; i < scaling_coeffs.length; i++) {
+    wavelet_coeffs[i] = scaling_coeffs[scaling_coeffs.length - i - 1];
     if (i % 2 == 1) {
-      g[i] *= -1.0;
+      wavelet_coeffs[i] *= -1.0;
     }
   }
 
-  // Derived globals
-  List<double> w = List.filled(v.length, 0.0);
+  // Temp array
+  List<double> temp_array = List.filled(output.length, 0.0);
 
-  // Internal helper function
-  void waveletDecomp(List<double> v, int n) {
-    // zero(w, 0, n);
-    for (int i = 0; i < n && i < w.length; i++) {
-      w[i] = 0;
+  // Iterate
+  for (int j = depth; j >= 0; j--) {
+    int length = pow(2, j + 1).toInt();
+
+    // Zero out the relevant region of the temp array
+    for (int i = 0; i < length; i++) {
+      temp_array[i] = 0;
     }
 
     // Perform convolution for each index l in the first half of the array
-    for (int l = 0; l < n / 2; l++) {
+    for (int l = 0; l < length / 2; l++) {
       int i = 2 * l;
 
       // Approximation coefficients (low-pass filtering)
-      for (int k = 0; k < h.length; k++) {
-        w[l] += v[(i + k) % n] * h[k];
+      for (int coeff_ind = 0; coeff_ind < scaling_coeffs.length; coeff_ind++) {
+        temp_array[l] +=
+            output[(i + coeff_ind) % length] * scaling_coeffs[coeff_ind];
       }
 
       // Detail coefficients (high-pass filtering)
-      int m = l + (n ~/ 2);
-      for (int k = 0; k < g.length; k++) {
-        w[m] += v[(i + k) % n] * g[k];
+      int m = l + (length ~/ 2);
+      for (int k = 0; k < wavelet_coeffs.length; k++) {
+        temp_array[m] += output[(i + k) % length] * wavelet_coeffs[k];
       }
     }
 
     // Copy the transformed coefficients back into the original array v
-    for (int i = 0; i < n; i++) {
-      v[i] = w[i];
+    for (int i = 0; i < length; i++) {
+      output[i] = temp_array[i];
     }
   }
 
-  // Actually run the decomposition
-  for (int j = m; j >= 0; j--) {
-    waveletDecomp(v, pow(2, j + 1).toInt());
-  }
+  return output;
 }

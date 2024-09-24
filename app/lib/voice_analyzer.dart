@@ -5,7 +5,6 @@ Defines analyzer class
 import 'dart:typed_data';
 import 'dart:math';
 import 'package:record/record.dart';
-import 'package:sound_library/sound_library.dart';
 import 'vocal_stats.dart';
 import './fwt.dart';
 

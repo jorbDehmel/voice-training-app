@@ -5,6 +5,9 @@ cwd := $(shell pwd)
 .PHONY: run
 run:	| build Makefile
 	docker run \
+		--env="DISPLAY" \
+		--volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
+		--net=host \
 		--mount type=bind,source="${cwd}/app",target="/home/user/app" \
 		-i \
 		-t flutter:latest \

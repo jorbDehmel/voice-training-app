@@ -4,8 +4,42 @@ Fast Wavelet Transform in Dart
 
 import 'dart:math';
 
-double logBase(double b, double upon) {
-  return log(upon) / log(b);
+// Returns `i` such that `(a >> i) == 1`
+// This is an integer estimate.
+// It runs in constant time, at most 128 iterations.
+int log2(int a) {
+  for (int i = 0; i < 128; ++i) {
+    if ((a >> i) == 1) {
+      return i;
+    }
+  }
+  throw RangeError('log2($a) is undefined.');
+}
+
+// Produce a list of the desired length from the given list, taking averages
+// where necessary.
+List<double> binnify(List<double> raw, int desiredLength) {
+  List<double> out = List.filled(desiredLength, 0.0);
+  final int step = raw.length ~/ desiredLength;
+
+  // Fill bins with sums
+  for (int i = 0; i < raw.length; ++i) {
+    if (i ~/ step < out.length) {
+      out[i ~/ step] += raw[i];
+    } else {
+      out[out.length - 1] += raw[i];
+    }
+  }
+
+  // Turn sums to averages for step-width bins
+  for (int i = 0; i + 1 < out.length; ++i) {
+    out[i] /= step;
+  }
+
+  // Final bin, which takes all remains.
+  out[out.length - 1] /= (step + raw.length % desiredLength);
+
+  return out;
 }
 
 int getSymmetricIndex(int index, int length) {
@@ -24,26 +58,30 @@ int getSymmetricIndex(int index, int length) {
 }
 
 /*
-Return the fast wavelet transform of the input, using Haar coefficients. The
-input array should have a size which is a power of two.
+Return the fast wavelet transform of the input, using Haar coefficients. If the
+input array's size is not a power of two, the entries after the largest power of
+two less than the size will all be averaged into the final bin such that the
+input size will be a power of two.
 */
 List<double> fwt(List<double> inp) {
-  // Copy input to output list
-  List<double> output = List.generate(inp.length, (int i) => inp[i]);
+  List<double> output;
+  int nLevels = log2(inp.length) - 1;
+  if (inp.length != pow(2, nLevels + 1)) {
+    // Bin input list into output list
+    output = binnify(inp, pow(2, nLevels + 1).floor());
+  } else {
+    // Copy input to output list
+    output = List.generate(inp.length, (int i) => inp[i]);
+  }
   int n = output.length;
 
-  int n_levels = logBase(2.0, output.length.toDouble()).floor() - 1;
-  if (output.length != pow(2, n_levels + 1)) {
-    throw Exception("Invalid dimensions! Input size must be power of 2");
-  }
-
-  // Get coefficients
+  // Get coefficients (Haar)
   const List<double> scalingCoeffs = [sqrt1_2, sqrt1_2];
   const List<double> waveletCoeffs = [sqrt1_2, -sqrt1_2];
 
   // Iterate
   int currentLength = 2 * n;
-  for (int level = 0; level <= n_levels; level++) {
+  for (int level = 0; level <= nLevels; level++) {
     currentLength ~/= 2;
 
     // Temp array
@@ -59,7 +97,6 @@ List<double> fwt(List<double> inp) {
       }
 
       // Detail coefficients (high-pass filtering)
-      // int m = l + (length ~/ 2);
       tempArray[i + (currentLength ~/ 2)] = 0.0;
       for (int j = 0; j < waveletCoeffs.length; j++) {
         tempArray[i + currentLength ~/ 2] +=

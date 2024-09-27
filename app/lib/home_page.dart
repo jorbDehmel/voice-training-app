@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import './analysis_page.dart';
 import './passthrough_page.dart';
 import './gamification_page.dart';

@@ -23,8 +23,9 @@ jobs:
 
     - name: Install dependencies
       run: |
+        sudo apt install flutter
         sudo apt update
 
     - name: Run tests
       run: |
-        make test
+        cd app ; flutter test

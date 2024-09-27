@@ -2,9 +2,10 @@
 Defines analyzer class
 */
 
+import 'dart:async';
 import 'dart:typed_data';
-import 'dart:math';
 import 'package:record/record.dart';
+import 'package:sound_library/sound_library.dart';
 import 'vocal_stats.dart';
 import './fwt.dart';
 
@@ -12,54 +13,67 @@ import './fwt.dart';
 Note: This should probably be a singleton, as it manages a recorder.
 */
 class VoiceAnalyzer {
-  final AudioRecorder recorder = AudioRecorder();
-  late Future<Stream<Uint8List>> strm;
-
-  // Analysis is done on the last 2^resolutionBits microphone
-  // readings. It's formatted this way to ensure that the array input to the
-  // wavelet transform is a power of two.
-  final int resolutionBits = 8;
-  Uint8List? buffer;
+  AudioRecorder recorder = AudioRecorder();
+  List<Uint8List> buffer = [];
+  StreamController<Uint8List> bufferController = StreamController();
+  bool isPlaying = false;
+  Duration playDelay = const Duration();
 
   VoiceAnalyzer() {
-    strm = recorder.startStream(const RecordConfig());
-
-    // Upon stream resolution
-    strm.then((what) {
-      // Attach callback for when mic data is yielded
-      what.listen((data) {
-        // Assert valid value for resolutionBits
-        assert(data.length == pow(2, resolutionBits));
-
-        // Use the current yielded data as buffer
-        buffer = data;
-      });
+    bufferController.stream.listen((data) {
+      // Don't let more than 1000 packets pile up
+      if (buffer.length < 1000) {
+        // Add this data packet
+        buffer.add(data);
+      }
     });
   }
 
   Future<VocalStats> getSnapshot() async {
     // Await buffer contents
-    Future.doWhile(() => buffer == null);
+    Future.doWhile(() => buffer.isEmpty);
 
     // Perform wavelet transform on current buffer contents
-    var transformed = fwt(buffer!.toList().cast());
+    final transformed = fwt(buffer.first.toList().cast());
+    VocalStats out = VocalStats();
 
-    // Extract relevant information from wavelet transform (???)
-    throw UnimplementedError();
+    // Extract relevant information from wavelet transform
+    print('WARNING: getSnapshot is unimplemented!');
+    out.averagePitch = 100.0;
+    out.resonanceMeasure = 100.0;
 
     // Return extracted statistics object
-    return VocalStats();
+    return out;
   }
 
   // Play to the speakers directly from the microphone stream, with the given
   // delay in seconds. This runs until the corresponding end function is called,
   // or the object is destroyed. Only handles seconds and milliseconds.
-  void beginPlayStreamWithDelay(double s) {
-    Future.delayed(
-        Duration(seconds: s.floor(), milliseconds: (s * 1000.0).floor()),
-        () => ());
+  void beginPlayStreamWithDelay(double seconds) async {
+    if (isPlaying) {
+      endPlayStreamWithDelay();
+    }
+    isPlaying = true;
+    playDelay = Duration(
+        seconds: seconds.floor(), milliseconds: (seconds * 1000).floor());
+
+    Timer.periodic(playDelay, (timer) async {
+      if (!isPlaying) {
+        timer.cancel();
+        return;
+      }
+
+      final toPlay = buffer.removeAt(0);
+      SoundPlayer.playFromBytes(toPlay);
+    });
+    bufferController
+        .addStream(await recorder.startStream(const RecordConfig()));
   }
 
   // Stop playing audio.
-  void endPlayStreamWithDelay() {}
+  void endPlayStreamWithDelay() {
+    recorder.cancel();
+    bufferController.close();
+    isPlaying = false;
+  }
 }

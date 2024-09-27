@@ -1,5 +1,8 @@
 # voice-training-app
 
+Target platform(s):
+- Android
+
 To build and launch the development Docker container, just run
 ```sh
 make run

@@ -82,20 +82,20 @@ int main() {
       assert((1 << (shift + 1)) > i);
     }
 
-    bool did_error = false;
+    bool didError = false;
     try {
       final int shift = log2(0);
     } catch (e) {
-      did_error = true;
+      didError = true;
     }
-    assert(did_error);
-    did_error = false;
+    assert(didError);
+    didError = false;
     try {
       final int shift = log2(-10);
     } catch (e) {
-      did_error = true;
+      didError = true;
     }
-    assert(did_error);
+    assert(didError);
   });
 
   return 0;

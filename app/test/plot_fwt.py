@@ -3,6 +3,7 @@ Plots data outputted by dart when analyzing a WAV file.
 '''
 
 import sys
+import os
 import subprocess
 from typing import List, Iterable
 import numpy as np
@@ -12,10 +13,13 @@ from pywt import dwt, Wavelet
 
 
 # The number of data points per data segment
-SEGMENT_LENGTH: int = 512
+N_BARS: int = 64
 
-# The number of segments to average per reading
-SKIP: int = 10
+# The number of input microphone readings to average per bin
+INPUT_AVG: int = 128
+
+# The number of output wavelet points to average per bin
+OUTPUT_AVG: int = 1
 
 
 def load_file(fp: str) -> List[List[float]]:
@@ -28,6 +32,7 @@ def load_file(fp: str) -> List[List[float]]:
 
     # Validate input path
     assert fp.endswith('.wav')
+    assert os.path.isfile(fp)
 
     # Load file
     segmented_data: List[List[int]] = []
@@ -38,31 +43,32 @@ def load_file(fp: str) -> List[List[float]]:
             history += f.read(1)
             history = history[-4:]
 
+        assert f.peek(), 'Failed to find data segment of WAV'
+
         # Read raw bytes until done
-        chunk: bytes = f.read(SEGMENT_LENGTH * SKIP)
-        while len(chunk) == SKIP:
+        chunk: bytes = f.read(N_BARS * INPUT_AVG)
+        while len(chunk) == N_BARS * INPUT_AVG:
             avgs: List[float] = []
-            for i in range(0, SEGMENT_LENGTH * SKIP - SKIP, SKIP):
-                avgs.append(np.mean([b for b in chunk[i:i+SKIP]]))
+            for i in range(0, N_BARS * INPUT_AVG - INPUT_AVG, INPUT_AVG):
+                avgs.append(np.mean([b for b in chunk[i:i+INPUT_AVG]]))
 
             segmented_data.append(avgs)
-            chunk = f.read(SEGMENT_LENGTH * SKIP)
+            chunk = f.read(N_BARS * INPUT_AVG)
+
+        print(f'Ignoring final chunk of size {len(chunk)}')
+
+    assert segmented_data, 'Did not read any data!'
 
     # Perform transform
     tf_data: List[List[float]] = []
     for seg in segmented_data:
-        tf_seg: List[List[float]] = dwt(seg, Wavelet('haar'))
+        # tf_seg: List[List[float]] = dwt(seg, Wavelet('haar'))
+        l = np.fft.fft(seg)[10:]
 
-        # Flatten
-        l: List[float] = []
-        for item in tf_seg:
-            l += list(item)
-
-        # Normalize
-        m: float = np.mean(l)
-        s: float = np.std(l)
-        for i, item in enumerate(l):
-            l[i] = (item - m) / s
+        # # Flatten
+        # l: List[float] = []
+        # for item in tf_seg:
+        #     l += list(item)
 
         tf_data.append(l)
 
@@ -78,6 +84,7 @@ if __name__ == '__main__':
 
     data: List[List[float]] = load_file(name)
     n: int = len(data)
+    print(f'Loaded audio data of length {n}')
     n_bars: int = len(data[0])
 
     print('Graphing...')
@@ -120,6 +127,7 @@ if __name__ == '__main__':
     bars = plt.bar(x, fn(0))
     peak_line = plt.axhline(y=0.0)
     trough_line = plt.axhline(y=0.0)
+    peak_vline = plt.axvline(x=0.0)
 
     def animate(i: int) -> None:
         '''
@@ -127,12 +135,14 @@ if __name__ == '__main__':
         '''
 
         y = fn(i)
-        peak: float = max(y)
+
+        peak_i: float = np.argmin(y)
+        peak: float = y[peak_i]
         trough: float = min(y)
-        if peak > 2.0:
-            peak_line.set_ydata([peak])
-        if trough < -2.0:
-            trough_line.set_ydata([trough])
+
+        peak_line.set_ydata([peak])
+        peak_vline.set_xdata([peak_i])
+        trough_line.set_ydata([trough])
 
         for ind, b in enumerate(bars):
             b.set_height(y[ind])

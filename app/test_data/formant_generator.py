@@ -4,6 +4,7 @@
 import sys
 import numpy as np
 import scipy.signal as signal
+import scipy.io.wavfile as wav
 
 
 class TestSignalGenerator:
@@ -52,4 +53,17 @@ class TestSignalGenerator:
 
 
 if __name__ == '__main__':
+    assert len(sys.argv) == 5
+
+    f0: float = float(sys.argv[1])
+    f1: float = float(sys.argv[2])
+    f2: float = float(sys.argv[3])
+
+    target: str = sys.argv[4]
+
+    gen = TestSignalGenerator(44100)
+    sig = gen.generate_test_signal(1.0, f0, f1, f2)
+
+    wav.write(target, 44100, sig.astype(np.uint8))
+
     sys.exit(0)

@@ -5,6 +5,8 @@ import sys
 import numpy as np
 import scipy.signal as signal
 import scipy.io.wavfile as wav
+import scipy.fft as fft
+from matplotlib import pyplot as plt
 
 
 class TestSignalGenerator:
@@ -33,7 +35,10 @@ class TestSignalGenerator:
         t = np.arange(total_samples) / self.sample_rate
         num_harmonics = int(self.sample_rate / (2 * f0))  # Up to Nyquist frequency
         source_signal = np.zeros_like(t)
+        print(num_harmonics)
         for k in range(1, num_harmonics + 1):
+            if k % 1_000 == 0:
+                print(k)
             source_signal += (1.0 / k) * np.sin(2 * np.pi * f0 * k * t)
         # Normalize the signal
         max_amp = np.max(np.abs(source_signal))
@@ -63,6 +68,11 @@ if __name__ == '__main__':
 
     gen = TestSignalGenerator(44100)
     sig = gen.generate_test_signal(1.0, f0, f1, f2)
+
+    fft_data = fft.fftshift(fft.fft(sig))
+    plt.vlines([f0, f1, f2], ymin=min(fft_data), ymax=max(fft_data))
+    plt.plot(fft_data)
+    plt.show()
 
     wav.write(target, 44100, sig.astype(np.uint8))
 

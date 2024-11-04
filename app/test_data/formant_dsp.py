@@ -37,9 +37,13 @@ def get_f1(signal: numpy.ndarray, f0: float,
     # filtered_signal = scipy.signal.lfilter(b, a, signal)
 
     # Compute LPC on the filtered signal
-    autocorr = numpy.correlate(signal, signal, mode='full')[len(signal)-1:]
+    autocorr = numpy.correlate(signal, signal, mode='full')
+    autocorr = autocorr[len(autocorr) // 2:]
+
     R = autocorr[:order + 1]
+
     A = numpy.linalg.solve(scipy.linalg.toeplitz(R[:-1]), -R[1:])
+
     lpc = numpy.concatenate([[1], A])  # LPC coefficients
 
     # Estimate F1 (lowest frequency above F0)

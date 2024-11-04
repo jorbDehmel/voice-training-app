@@ -16,6 +16,7 @@ int main() {
 
     File(filepath).readAsString().then((input) async {
       var cases = jsonDecode(input);
+      var sum = 0.0;
       for (var c in cases) {
         final List<double> inp = List<double>.from(c['input']);
         final List<double> out = List<double>.from(c['output']);
@@ -28,7 +29,11 @@ int main() {
 
         assert(obs_f1 != -1.0);
         assert(re < 200.0);
+
+        print('RE: $re');
+        sum += re;
       }
+      print('Mean RE: ${sum / cases.length}');
     });
   });
 

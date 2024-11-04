@@ -7,12 +7,12 @@ import 'dart:typed_data';
 import 'package:record/record.dart';
 import 'package:sound_library/sound_library.dart';
 import 'vocal_stats.dart';
-import 'package:pitch_detector_dart/pitch_detector.dart';
-import 'package:fftea/fftea.dart';
 import 'formants.dart';
+import 'package:pitch_detector_dart/pitch_detector.dart';
 
 class VoiceAnalyzer {
   AudioRecorder recorder = AudioRecorder();
+  RecordConfig recorderConfig = const RecordConfig();
   List<Uint8List> buffer = [];
   StreamController<Uint8List> bufferController = StreamController();
   bool isPlaying = false;
@@ -40,8 +40,12 @@ class VoiceAnalyzer {
     out.averagePitch = result.pitch;
 
     // Extract formants (hard part)
-    final fft = FFT(data.length);
-    final transformed_data = fft.realFft(data.toList().cast());
+    final f1 = await getF1(
+        data, out.averagePitch, recorderConfig.sampleRate.toDouble());
+    out.resonanceMeasure = f1;
+
+    // Flag unused stuff
+    out.confidence = out.volume = -1.0;
 
     // Return extracted statistics object
     return out;
@@ -67,8 +71,7 @@ class VoiceAnalyzer {
       final toPlay = buffer.removeAt(0);
       SoundPlayer.playFromBytes(toPlay);
     });
-    bufferController
-        .addStream(await recorder.startStream(const RecordConfig()));
+    bufferController.addStream(await recorder.startStream(recorderConfig));
   }
 
   // Stop playing audio.

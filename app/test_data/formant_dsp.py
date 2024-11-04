@@ -1,89 +1,53 @@
-import sys
-from typing import List
-import numpy as np
-from numpy.fft import fft, ifft
-from scipy.signal.windows import hamming
-import scipy.io.wavfile as wav
+'''
+Module which defines `get_f1`, which gets f1 from a given
+signal.
+'''
 
-class DSPModule:
-    def __init__(self, sample_rate):
-        self.sample_rate = sample_rate
+from typing import Optional
+import scipy
+import numpy
 
-    def apply_window(self, signal):
-        window = hamming(len(signal), sym=False)
-        return signal * window
+# "Easy" things:
+# - numpy.concatenate (literally just used to prepend one item)
+# - numpy.angle (angle of complex number)
+# - scipy.linalg.toeplitz (Toeplitz array, google it)
+# - numpy.linalg.solve (see https://pub.dev/packages/matrix_utils)
+# - numpy.roots (see https://pub.dev/packages/equations)
 
-    def compute_autocorrelation(self, signal):
-        N = len(signal)
-        # Zero-padding for efficient FFT computation
-        fft_size = 2 ** int(np.ceil(np.log2(2 * N - 1)))
-        signal_fft = fft(signal, n=fft_size)
-        power_spectrum = np.abs(signal_fft) ** 2
-        autocorr = ifft(power_spectrum).real
-        autocorr = autocorr[:N] / N
-        return autocorr
+# Hard things:
+# - numpy.correlate (probably achievable? https://numpy.org/doc/stable/reference/generated/numpy.correlate.html)
 
-    def estimate_f0(self, autocorrelation):
-        # Ignore zero lag
-        autocorr = autocorrelation[1:]
-        peak_index = np.argmax(autocorr) + 1  # +1 to correct index
-        if peak_index <= 0:
-            return 0.0
-        return self.sample_rate / peak_index
+def get_f1(signal: numpy.ndarray, f0: float,
+           sample_rate: float = 44_100.0,
+           order: int = 12) -> Optional[float]:
+    '''
+    Returns f1.
 
-    def compute_lpc(self, signal, order):
-        # Compute autocorrelation
-        autocorr = np.correlate(signal, signal, mode='full')
-        autocorr = autocorr[len(signal) - 1:]
-        r = autocorr[:order + 1]
-        # Perform Levinson-Durbin recursion
-        lpc_coeffs, _ = self._levinson_durbin(r, order)
-        return lpc_coeffs
+    :param signal: The input signal
+    :param f0: The known value of f0 (the pitch)
+    :param order: The number of coefficients to keep
+    :returns: f1 estimate
+    '''
 
-    def _levinson_durbin(self, r, order):
-        """Levinson-Durbin recursion for LPC coefficients."""
-        a = np.zeros(order + 1)
-        e = np.zeros(order + 1)
-        a[0] = 1.0
-        e[0] = r[0]
-        for i in range(1, order + 1):
-            acc = np.dot(a[:i], r[i:0:-1])
-            k = - (r[i] + acc) / e[i - 1]
-            a[1:i + 1] += k * a[i - 1::-1]
-            e[i] = e[i - 1] * (1 - k * k)
-        return a, e[-1]
+    # These things increase accuracy, but are not strictly necessary:
+    # Apply hamming window
+    # signal = signal * scipy.signal.windows.hamming(len(signal))
+    # Apply high-pass butter filter
+    # b, a = scipy.signal.butter(order, f0 / (0.5 * sample_rate), btype='high', analog=False)
+    # filtered_signal = scipy.signal.lfilter(b, a, signal)
 
-    def estimate_f1(self, lpc_coeffs):
-        # Find roots of LPC polynomial
-        roots = np.roots(lpc_coeffs)
-        # Keep roots inside the unit circle
-        roots = roots[np.abs(roots) < 1]
-        # Convert roots to frequencies
-        angles = np.angle(roots)
-        formant_freqs = angles * (self.sample_rate / (2 * np.pi))
-        # Keep positive frequencies
-        formant_freqs = formant_freqs[formant_freqs > 0]
-        formant_freqs = np.sort(formant_freqs)
-        # Return the first formant frequency
-        return formant_freqs[0] if len(formant_freqs) > 0 else 0.0
+    # Compute LPC on the filtered signal
+    autocorr = numpy.correlate(signal, signal, mode='full')[len(signal)-1:]
+    R = autocorr[:order + 1]
+    A = numpy.linalg.solve(scipy.linalg.toeplitz(R[:-1]), -R[1:])
+    lpc = numpy.concatenate([[1], A])  # LPC coefficients
 
+    # Estimate F1 (lowest frequency above F0)
+    rts = numpy.roots(lpc)  # Find roots of LPC polynomial
+    rts = [r for r in rts if abs(r) < 1]  # Keep roots inside unit circle
 
-if __name__ == '__main__':
-    assert len(sys.argv) == 2, 'Please provide a filename.'
+    # Convert roots to frequencies and filter out those below F0
+    freqs = [(numpy.angle(r) * (sample_rate / (2 * numpy.pi))) for r in rts]
+    freqs_above_f0 = [f for f in freqs if f > f0]
 
-    ORDER: int = 8
-    mod: DSPModule = DSPModule(44100)
-
-    # Get sample
-    rate, signal = wav.read(sys.argv[1])
-    print(f'Rate: {rate}')
-
-    # Preprocessing
-    signal = mod.apply_window(signal)
-    autocor: float = mod.compute_autocorrelation(signal)
-    f0: float = mod.estimate_f0(autocor)
-
-    lpc: List[float] = mod.compute_lpc(signal, ORDER)
-    f1: float = mod.estimate_f1(lpc)
-
-    print(f'f0: {f0}, f1: {f1}')
+    return min(freqs_above_f0) if freqs_above_f0 else None  # Return F1

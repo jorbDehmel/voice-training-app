@@ -35,10 +35,7 @@ class TestSignalGenerator:
         t = np.arange(total_samples) / self.sample_rate
         num_harmonics = int(self.sample_rate / (2 * f0))  # Up to Nyquist frequency
         source_signal = np.zeros_like(t)
-        print(num_harmonics)
         for k in range(1, num_harmonics + 1):
-            if k % 1_000 == 0:
-                print(k)
             source_signal += (1.0 / k) * np.sin(2 * np.pi * f0 * k * t)
         # Normalize the signal
         max_amp = np.max(np.abs(source_signal))

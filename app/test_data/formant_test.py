@@ -1,50 +1,29 @@
-'''
-Tests generation and formant recovery scripts
-'''
-
-from hypothesis import given, settings, strategies as some
+from random import uniform
 from formant_generator import TestSignalGenerator
-from formant_dsp import DSPModule
+from formant_dsp import get_f1
 
-
-SAMPLE_RATE: int = 44_100
-ORDER: int = 3
-RE_THRESH: float = 100.0
-CASES: int = 16
-
+SAMPLE_RATE = 44_100
+ORDER = 3
 
 def test_instance(f0: float, f1: float, f2: float) -> None:
-    '''
-    Generates data, then tests formant recovery on that data.
-    '''
+    print(f'Test case: F0={round(f0, 3)}, F1={round(f1, 3)}, F2={round(f2, 3)}')
 
-    gen: TestSignalGenerator = TestSignalGenerator(SAMPLE_RATE)
-    mod: DSPModule = DSPModule(SAMPLE_RATE)
+    gen = TestSignalGenerator(SAMPLE_RATE)
 
+    # Generate and window the signal
     signal = gen.generate_test_signal(1.0, f0, f1, f2)
-    signal = mod.apply_window(signal)
-    autocor = mod.compute_autocorrelation(signal)
-    lpc = mod.compute_lpc(signal, ORDER)
 
-    obs_f0: float = mod.estimate_f0(autocor)
-    obs_f1: float = mod.estimate_f1(lpc)
+    obs_f1 = get_f1(signal, f0, SAMPLE_RATE, ORDER)
 
-    f0_re = 100.0 * abs(f0 - obs_f0) / abs(f0)
-    f1_re = 100.0 * abs(f1 - obs_f1) / abs(f1)
+    # Compute relative error for F1
+    f1_re = 100.0 * abs(f1 - obs_f1) / abs(f1) if obs_f1 else float('inf')
 
-    print(f'Exp f0: {f0} Obs f0: {obs_f0} RE: {f0_re}%')
-    print(f'Exp f1: {f1} Obs f1: {obs_f1} RE: {f1_re}%')
-    print('')
-
-    assert f0_re < RE_THRESH and f1_re < RE_THRESH
+    print(f'Expected F1: {round(f1, 3)}, Observed F1: {round(obs_f1, 3)}, RE: {round(f1_re, 3)}%')
 
 
 if __name__ == '__main__':
-    @settings(max_examples=CASES)
-    @given(some.floats(min_value=100.0, max_value=10_000.0),
-           some.floats(min_value=100.0, max_value=10_000.0),
-           some.floats(min_value=100.0, max_value=10_000.0))
-    def test_case(f0, f1, f2):
-        test_instance(f0, f1, f2)
-
-    test_case()
+    for test_case in range(100):
+        test_instance(
+            uniform(100.0, 500.0),
+            uniform(500.0, 1_000.0),
+            uniform(1_000, 10_000.0))

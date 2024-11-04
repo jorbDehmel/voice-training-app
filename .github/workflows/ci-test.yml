@@ -18,7 +18,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        snap install flutter
+        sudo snap install flutter
         sudo apt update
 
     - name: Run tests

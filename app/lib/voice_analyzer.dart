@@ -7,17 +7,17 @@ import 'dart:typed_data';
 import 'package:record/record.dart';
 import 'package:sound_library/sound_library.dart';
 import 'vocal_stats.dart';
-import './fwt.dart';
+import 'formants.dart';
+import 'package:pitch_detector_dart/pitch_detector.dart';
 
-/*
-Note: This should probably be a singleton, as it manages a recorder.
-*/
 class VoiceAnalyzer {
   AudioRecorder recorder = AudioRecorder();
+  RecordConfig recorderConfig = const RecordConfig();
   List<Uint8List> buffer = [];
   StreamController<Uint8List> bufferController = StreamController();
   bool isPlaying = false;
   Duration playDelay = const Duration();
+  PitchDetector pitchDetector = PitchDetector();
 
   VoiceAnalyzer() {
     bufferController.stream.listen((data) {
@@ -32,15 +32,20 @@ class VoiceAnalyzer {
   Future<VocalStats> getSnapshot() async {
     // Await buffer contents
     Future.doWhile(() => buffer.isEmpty);
-
-    // Perform wavelet transform on current buffer contents
-    final transformed = fwt(buffer.first.toList().cast());
+    final data = buffer.first;
     VocalStats out = VocalStats();
 
-    // Extract relevant information from wavelet transform
-    print('WARNING: getSnapshot is unimplemented!');
-    out.averagePitch = 100.0;
-    out.resonanceMeasure = 100.0;
+    // Extract pitch (easy part)
+    final result = await pitchDetector.getPitchFromIntBuffer(data);
+    out.averagePitch = result.pitch;
+
+    // Extract formants (hard part)
+    final f1 = await getF1(
+        data, out.averagePitch, recorderConfig.sampleRate.toDouble());
+    out.resonanceMeasure = f1;
+
+    // Flag unused stuff
+    out.confidence = out.volume = -1.0;
 
     // Return extracted statistics object
     return out;
@@ -66,8 +71,7 @@ class VoiceAnalyzer {
       final toPlay = buffer.removeAt(0);
       SoundPlayer.playFromBytes(toPlay);
     });
-    bufferController
-        .addStream(await recorder.startStream(const RecordConfig()));
+    bufferController.addStream(await recorder.startStream(recorderConfig));
   }
 
   // Stop playing audio.

@@ -17,6 +17,10 @@ dependencies:
   sqlite3: ^2.4.6
   sound_library: ^1.0.0
   waveform_flutter: ^1.0.1
+  pitch_detector_dart: ^0.0.7
+  flutter_fft: ^1.0.2+6
+  fftea: ^1.5.0+1
+  equations: ^5.0.2
 
 dev_dependencies:
   flutter_test:

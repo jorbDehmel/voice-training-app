@@ -8,7 +8,7 @@ ARG PASSWORD=password
 # Basic system setup
 USER root
 RUN apt-get update
-RUN apt install -y nano sudo bash wget curl tar xz-utils git clang cmake ninja-build pkg-config libgtk-3-dev android-sdk
+RUN apt install -y nano sudo bash wget curl tar xz-utils git clang cmake ninja-build pkg-config libgtk-3-dev android-sdk lcov
 
 # User setup
 RUN useradd -ms /bin/bash $USER

@@ -2,6 +2,7 @@ app/test_data/*.wav
 app/test_data/*.mp3
 app/test_data/*.mp4
 .idea
+coverage/
 
 # See https://www.dartlang.org/guides/libraries/private-files
 .hypothesis

@@ -11,7 +11,7 @@ import 'formants.dart';
 import 'package:pitch_detector_dart/pitch_detector.dart';
 
 class VoiceAnalyzer {
-  AudioRecorder recorder = AudioRecorder();
+  AudioRecorder? recorder;
   RecordConfig recorderConfig = const RecordConfig();
   List<Uint8List> buffer = [];
   StreamController<Uint8List> bufferController = StreamController();
@@ -20,20 +20,50 @@ class VoiceAnalyzer {
   PitchDetector pitchDetector = PitchDetector();
 
   VoiceAnalyzer() {
-    bufferController.stream.listen((data) {
-      // Don't let more than 1000 packets pile up
-      if (buffer.length < 1000) {
-        // Add this data packet
-        buffer.add(data);
+    try {
+      recorder = AudioRecorder();
+    } on UnimplementedError {
+      recorder = null;
+      print('Failed to instantiate recorder!');
+    }
+
+    // Check validity of recorder
+    recorder?.hasPermission().then((hasPermission) {
+      if (hasPermission) {
+        recorder?.isRecording().then((isRecording) {
+          if (isRecording) {
+            // Register buffer handler lambda
+            bufferController.stream.listen((data) {
+              // Don't let more than 100 packets pile up
+              if (buffer.length < 100) {
+                // Add this data packet
+                buffer.add(data);
+              }
+            });
+          } else {
+            print('Failed to start recording!');
+          }
+        });
+      } else {
+        print('Failed to get microphone permission!');
       }
     });
   }
 
+  void dispose() {
+    endPlayStreamWithDelay();
+  }
+
   Future<VocalStats> getSnapshot() async {
-    // Await buffer contents
-    Future.doWhile(() => buffer.isEmpty);
-    final data = buffer.first;
     VocalStats out = VocalStats();
+    out.averagePitch = out.confidence = 0.0;
+    out.resonanceMeasure = out.volume = 0.0;
+
+    // Avoid using empty buffer or buffer that is already in use
+    if (isPlaying || buffer.isEmpty) {
+      return out;
+    }
+    final data = buffer.first;
 
     // Extract pitch (easy part)
     final result = await pitchDetector.getPitchFromIntBuffer(data);
@@ -43,9 +73,6 @@ class VoiceAnalyzer {
     final f1 = await getF1(
         data, out.averagePitch, recorderConfig.sampleRate.toDouble());
     out.resonanceMeasure = f1;
-
-    // Flag unused stuff
-    out.confidence = out.volume = -1.0;
 
     // Return extracted statistics object
     return out;
@@ -57,6 +84,8 @@ class VoiceAnalyzer {
   void beginPlayStreamWithDelay(double seconds) async {
     if (isPlaying) {
       endPlayStreamWithDelay();
+    } else if (recorder == null) {
+      return;
     }
     isPlaying = true;
     playDelay = Duration(
@@ -66,17 +95,19 @@ class VoiceAnalyzer {
       if (!isPlaying) {
         timer.cancel();
         return;
+      } else if (buffer.isEmpty) {
+        return;
       }
 
       final toPlay = buffer.removeAt(0);
       SoundPlayer.playFromBytes(toPlay);
     });
-    bufferController.addStream(await recorder.startStream(recorderConfig));
+    bufferController.addStream(await recorder!.startStream(recorderConfig));
   }
 
   // Stop playing audio.
   void endPlayStreamWithDelay() {
-    recorder.cancel();
+    recorder?.cancel();
     bufferController.close();
     isPlaying = false;
   }

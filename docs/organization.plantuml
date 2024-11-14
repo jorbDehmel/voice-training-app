@@ -3,15 +3,17 @@ skinparam dpi 300
 
 () RecordingLib
 () SoundLibrary
-() FastWaveletTransform
-() SQLiteLib
+() PitchDetector
 
 package VoiceAppGUI {
     class VocalStats {}
 
     class VoiceAnalyzer {
         + VoiceAnalyzer()
+        + void dispose()
         + VocalStats getSnapshot()
+        + void beginSnapshots(callback)
+        + void endSnapshots()
         + void beginPlayStreamWithDelay(double s)
         + void endPlayStreamWithDelay()
     }
@@ -28,16 +30,11 @@ package VoiceAppGUI {
         class PassThroughInterface {}
     }
 
-    package GamificationPage {
-        class StateManager {}
-    }
-
     package InfoPage {}
 
-    nav1 --> AnalysisPage
-    nav1 --> PassthroughPage
-    nav1 --> GamificationPage
-    nav1 --> InfoPage
+    nav1 -> AnalysisPage
+    nav1 -> PassthroughPage
+    nav1 -> InfoPage
 
     DisplayWidget -- VocalStats : Gets snapshots >
     VocalStats -- VoiceAnalyzer : Loads frequency information >
@@ -46,10 +43,14 @@ package VoiceAppGUI {
 
 VoiceAnalyzer -- RecordingLib : Gets microphone input from >
 VoiceAnalyzer -- SoundLibrary : Plays sound via >
-VoiceAnalyzer -- FastWaveletTransform : Analyzes input via >
-StateManager -- SQLiteLib : Stores data via >
+VoiceAnalyzer -- Formants : Uses to get F1 >
+VoiceAnalyzer -- PitchDetector : Uses to get F0 >
 
 () main
 main --> HomePage : Default
+
+class Formants {
+    + Future<double> getF1(signal, double f0, double sampleRate)
+}
 
 @enduml

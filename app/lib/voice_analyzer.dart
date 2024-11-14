@@ -3,6 +3,7 @@ Defines analyzer class
 */
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:typed_data';
 import 'package:record/record.dart';
 import 'package:sound_library/sound_library.dart';
@@ -13,9 +14,9 @@ import 'package:pitch_detector_dart/pitch_detector.dart';
 class VoiceAnalyzer {
   AudioRecorder? recorder;
   RecordConfig recorderConfig = const RecordConfig();
-  List<Uint8List> buffer = [];
+  Queue<Uint8List> buffer = Queue<Uint8List>();
   StreamController<Uint8List> bufferController = StreamController();
-  bool isPlaying = false;
+  bool isPlaying = false, isForwardingSnapshots = false;
   Duration playDelay = const Duration();
   PitchDetector pitchDetector = PitchDetector();
 
@@ -35,10 +36,11 @@ class VoiceAnalyzer {
             // Register buffer handler lambda
             bufferController.stream.listen((data) {
               // Don't let more than 100 packets pile up
-              if (buffer.length < 100) {
-                // Add this data packet
-                buffer.add(data);
+              while (buffer.length > 128) {
+                buffer.removeFirst();
               }
+              // Add this data packet to the end
+              buffer.add(data);
             });
           } else {
             print('Failed to start recording!');
@@ -84,6 +86,8 @@ class VoiceAnalyzer {
   void beginPlayStreamWithDelay(double seconds) async {
     if (isPlaying) {
       endPlayStreamWithDelay();
+    } else if (isForwardingSnapshots) {
+      endSnapshots();
     } else if (recorder == null) {
       return;
     }
@@ -99,7 +103,7 @@ class VoiceAnalyzer {
         return;
       }
 
-      final toPlay = buffer.removeAt(0);
+      final toPlay = buffer.removeFirst();
       SoundPlayer.playFromBytes(toPlay);
     });
     bufferController.addStream(await recorder!.startStream(recorderConfig));
@@ -110,5 +114,36 @@ class VoiceAnalyzer {
     recorder?.cancel();
     bufferController.close();
     isPlaying = false;
+  }
+
+  // Register a callback to receive snapshots upon microphone
+  // update.
+  void beginSnapshots(callback) async {
+    if (isPlaying) {
+      endPlayStreamWithDelay();
+    } else if (isForwardingSnapshots) {
+      endSnapshots();
+    } else if (recorder == null) {
+      return;
+    }
+    isForwardingSnapshots = true;
+
+    Timer.periodic(playDelay, (timer) async {
+      if (!isForwardingSnapshots) {
+        timer.cancel();
+        return;
+      } else if (buffer.isEmpty) {
+        return;
+      }
+      callback(getSnapshot());
+    });
+    bufferController.addStream(await recorder!.startStream(recorderConfig));
+  }
+
+  // Stop playing audio.
+  void endSnapshots() {
+    recorder?.cancel();
+    bufferController.close();
+    isForwardingSnapshots = false;
   }
 }

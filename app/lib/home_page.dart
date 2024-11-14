@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import './analysis_page.dart';
 import './passthrough_page.dart';
-import './gamification_page.dart';
+// import './gamification_page.dart';
 import './info_page.dart';
 
 class VoiceAppHomePage extends StatelessWidget {
@@ -14,6 +14,8 @@ class VoiceAppHomePage extends StatelessWidget {
       body: Center(
         // Navigation column
         child: Column(children: [
+          // Title
+          const Text('Voice Training App'),
           // Jump to analysis page
           ElevatedButton(
             child: const Text('Analysis'),
@@ -36,16 +38,16 @@ class VoiceAppHomePage extends StatelessWidget {
             },
           ),
           // Jump to gamification page
-          ElevatedButton(
-            child: const Text('Gamification'),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const GamificationPage()),
-              );
-            },
-          ),
+          //   ElevatedButton(
+          //     child: const Text('Gamification'),
+          //     onPressed: () {
+          //       Navigator.push(
+          //         context,
+          //         MaterialPageRoute(
+          //             builder: (context) => const GamificationPage()),
+          //       );
+          //     },
+          //   ),
           // Jump to info page
           ElevatedButton(
             child: const Text('Info'),

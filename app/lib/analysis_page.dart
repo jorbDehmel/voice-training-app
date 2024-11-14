@@ -9,7 +9,7 @@ class AnalysisPageState extends State<AnalysisPage> {
   @override
   Widget build(BuildContext context) {
     analyzer = VoiceAnalyzer();
-    analyzer?.getSnapshot().then((snapshot) {
+    analyzer?.beginSnapshots((snapshot) {
       print(snapshot);
     });
 

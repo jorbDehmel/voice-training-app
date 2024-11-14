@@ -9,9 +9,9 @@ import 'dart:collection';
 import 'dart:typed_data';
 import 'package:record/record.dart';
 import 'package:sound_library/sound_library.dart';
+import 'package:pitch_detector_dart/pitch_detector.dart';
 import 'vocal_stats.dart';
 import 'formants.dart';
-import 'package:pitch_detector_dart/pitch_detector.dart';
 
 class VoiceAnalyzer {
   AudioRecorder? recorder;
@@ -53,6 +53,8 @@ class VoiceAnalyzer {
     endPlayStreamWithDelay();
   }
 
+  // Yields a single VocalStats instance based on the most
+  // recent data.
   Future<VocalStats> getSnapshot() async {
     VocalStats out = VocalStats();
     out.averagePitch = out.confidence = 0.0;
@@ -80,6 +82,7 @@ class VoiceAnalyzer {
   // Play to the speakers directly from the microphone stream, with the given
   // delay in seconds. This runs until the corresponding end function is called,
   // or the object is destroyed. Only handles seconds and milliseconds.
+  // This also cancels any existing subscriptions.
   void beginPlayStreamWithDelay(double seconds) async {
     if (isPlaying) {
       endPlayStreamWithDelay();
@@ -113,8 +116,9 @@ class VoiceAnalyzer {
     isPlaying = false;
   }
 
-  // Register a callback to receive snapshots upon microphone
-  // update.
+  // Register a callback to receive snapshots periodically upon
+  // microphone update. This also cancels any existing
+  // subscriptions.
   void beginSnapshots(callback) async {
     if (isPlaying) {
       endPlayStreamWithDelay();

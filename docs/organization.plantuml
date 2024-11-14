@@ -6,7 +6,12 @@ skinparam dpi 300
 () PitchDetector
 
 package VoiceAppGUI {
-    class VocalStats {}
+    class VocalStats {
+        + double averagePitch = 0.0; // F0
+        + double resonanceMeasure = 0.0; // F1
+        + double confidence = 0.0; // UNUSED
+        + double volume = 0.0; // UNUSED
+    }
 
     class VoiceAnalyzer {
         + VoiceAnalyzer()

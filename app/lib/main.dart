@@ -1,3 +1,8 @@
+/*
+Flutter's entry point; It just launches the app as defined
+elsewhere.
+*/
+
 import 'package:flutter/material.dart';
 import './home_page.dart';
 

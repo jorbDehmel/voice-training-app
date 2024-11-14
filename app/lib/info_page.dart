@@ -1,3 +1,7 @@
+/*
+Provides some information about the app and its development.
+*/
+
 import 'package:flutter/material.dart';
 
 const String textInfo =

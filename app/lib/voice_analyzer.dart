@@ -1,5 +1,7 @@
 /*
-Defines analyzer class
+Defines the VoiceAnalyzer class, which interfaces with external
+libraries and the local DSP module to perform analysis on the
+microphone stream.
 */
 
 import 'dart:async';
@@ -25,7 +27,6 @@ class VoiceAnalyzer {
       recorder = AudioRecorder();
     } on UnimplementedError {
       recorder = null;
-      print('Failed to instantiate recorder!');
     }
 
     // Check validity of recorder
@@ -42,12 +43,8 @@ class VoiceAnalyzer {
               // Add this data packet to the end
               buffer.add(data);
             });
-          } else {
-            print('Failed to start recording!');
           }
         });
-      } else {
-        print('Failed to get microphone permission!');
       }
     });
   }

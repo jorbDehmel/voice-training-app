@@ -1,3 +1,8 @@
+/*
+Allows the user to listen to the microphone feed with some
+arbitrary delay in seconds.
+*/
+
 import 'package:flutter/material.dart';
 import 'package:voice_training_app/voice_analyzer.dart';
 

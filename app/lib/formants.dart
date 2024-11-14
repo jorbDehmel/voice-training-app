@@ -1,6 +1,14 @@
+/*
+Signal processing things for Flutter voice training app. This
+was largely adapted from Python.
+*/
+
 import 'dart:math';
 import 'package:equations/equations.dart';
 
+// The number of coefficients to keep. The more the better, but
+// 3 is good enough for our results to be proportional to the
+// correct results.
 const int order = 3;
 
 /*
@@ -84,7 +92,8 @@ RealMatrix toeplitz(List<double> firstCol) {
       rows: firstCol.length, columns: firstCol.length, data: data);
 }
 
-// - numpy.linalg.solve (see https://pub.dev/packages/matrix_utils)
+// Solve a linear system of equations
+// (see https://pub.dev/packages/matrix_utils)
 List<double> solveLinSys(RealMatrix coeffs, List<double> rhs) {
   return CholeskySolver(matrix: coeffs, knownValues: rhs).solve();
 }

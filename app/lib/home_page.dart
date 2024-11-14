@@ -1,8 +1,13 @@
+/*
+The home page of the voice training app. This lets the user
+move to other pages, but not much else.
+*/
+
 import 'package:flutter/material.dart';
 import './analysis_page.dart';
 import './passthrough_page.dart';
-// import './gamification_page.dart';
 import './info_page.dart';
+// import './gamification_page.dart';
 
 class VoiceAppHomePage extends StatelessWidget {
   const VoiceAppHomePage({super.key, required this.title});

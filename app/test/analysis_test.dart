@@ -22,12 +22,12 @@ int main() {
         final List<double> out = List<double>.from(c['output']);
 
         final double f0 = out[0];
-        final double exp_f1 = out[1];
-        final double obs_f1 = await getF1(inp, f0, sampleRate);
+        final double expF1 = out[1];
+        final double obsF1 = await getF1(inp, f0, sampleRate);
 
-        final double re = 100.0 * abs(exp_f1 - obs_f1) / abs(exp_f1);
+        final double re = 100.0 * abs(expF1 - obsF1) / abs(expF1);
 
-        assert(obs_f1 != -1.0);
+        assert(obsF1 != -1.0);
         assert(re < 200.0);
 
         print('RE: $re');
@@ -49,12 +49,12 @@ int main() {
         final List<double> out = List<double>.from(c['output']);
 
         final double f0 = out[0];
-        final double exp_f1 = out[1];
-        final double obs_f1 = await getF1(inp, f0, sampleRate);
+        final double expF1 = out[1];
+        final double obsF1 = await getF1(inp, f0, sampleRate);
 
-        final double re = 100.0 * abs(exp_f1 - obs_f1) / abs(exp_f1);
+        final double re = 100.0 * abs(expF1 - obsF1) / abs(expF1);
 
-        assert(obs_f1 != -1.0);
+        assert(obsF1 != -1.0);
         assert(re < 200.0);
 
         print('RE: $re');

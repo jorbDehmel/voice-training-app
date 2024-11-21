@@ -6,12 +6,22 @@ microphone stream.
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:record/record.dart';
 import 'package:sound_library/sound_library.dart';
 import 'package:pitch_detector_dart/pitch_detector.dart';
 import 'vocal_stats.dart';
 import 'formants.dart';
+
+// To be used as a worker thread
+void analysisWorkerMain(ReceivePort _, SendPort outputPort, double delay) {
+  VoiceAnalyzer a = VoiceAnalyzer();
+  a.beginSnapshots(delay, (VocalStats snapshot) {
+    List<double> l = [snapshot.averagePitch, snapshot.resonanceMeasure];
+    outputPort.send(l);
+  });
+}
 
 class VoiceAnalyzer {
   AudioRecorder? recorder;
@@ -119,7 +129,7 @@ class VoiceAnalyzer {
   // Register a callback to receive snapshots periodically upon
   // microphone update. This also cancels any existing
   // subscriptions.
-  void beginSnapshots(callback) async {
+  void beginSnapshots(double seconds, callback) async {
     if (isPlaying) {
       endPlayStreamWithDelay();
     } else if (isForwardingSnapshots) {
@@ -128,6 +138,8 @@ class VoiceAnalyzer {
       return;
     }
     isForwardingSnapshots = true;
+    playDelay = Duration(
+        seconds: seconds.floor(), milliseconds: (seconds * 1000).floor());
 
     Timer.periodic(playDelay, (timer) async {
       if (!isForwardingSnapshots) {

@@ -15,9 +15,9 @@ import 'vocal_stats.dart';
 import 'formants.dart';
 
 // To be used as a worker thread
-void analysisWorkerMain(ReceivePort _, SendPort outputPort, double delay) {
+void analysisWorkerMain(SendPort outputPort) {
   VoiceAnalyzer a = VoiceAnalyzer();
-  a.beginSnapshots(delay, (VocalStats snapshot) {
+  a.beginSnapshots(0.01, (VocalStats snapshot) {
     List<double> l = [snapshot.averagePitch, snapshot.resonanceMeasure];
     outputPort.send(l);
   });
@@ -66,9 +66,7 @@ class VoiceAnalyzer {
   // Yields a single VocalStats instance based on the most
   // recent data.
   Future<VocalStats> getSnapshot() async {
-    VocalStats out = VocalStats();
-    out.averagePitch = out.confidence = 0.0;
-    out.resonanceMeasure = out.volume = 0.0;
+    VocalStats out = VocalStats(const [0.0, 0.0, 0.0, 0.0]);
 
     // Avoid using empty buffer or buffer that is already in use
     if (isPlaying || buffer.isEmpty) {

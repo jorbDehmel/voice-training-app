@@ -27,7 +27,7 @@ class VoiceAppHomePage extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const AnalysisPage()),
+                MaterialPageRoute(builder: (context) => AnalysisPage()),
               );
             },
           ),

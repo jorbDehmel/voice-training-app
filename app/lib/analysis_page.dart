@@ -3,6 +3,7 @@ import 'dart:isolate';
 
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
+import 'voice_analyzer.dart';
 
 class AnalysisPage extends StatefulWidget {
   @override
@@ -22,7 +23,7 @@ class AnalysisPageState extends State<AnalysisPage> {
     _loadIcon();
 
     () async {
-      await Isolate.spawn(, readPort.sendPort);
+      await Isolate.spawn(analysisWorkerMain, readPort.sendPort);
     };
 
     readPort.listen((dynamic message) async {
@@ -31,12 +32,12 @@ class AnalysisPageState extends State<AnalysisPage> {
         y = message[1];
       });
     });
-
   }
 
   Future<void> _loadIcon() async {
     final completer = Completer<ui.Image>();
-    final ImageStream stream = AssetImage('assets/icon.png').resolve(ImageConfiguration());
+    final ImageStream stream =
+        AssetImage('assets/icon.png').resolve(ImageConfiguration());
     stream.addListener(ImageStreamListener((ImageInfo info, bool _) {
       completer.complete(info.image);
     }));

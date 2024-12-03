@@ -15,9 +15,9 @@ import 'formants.dart';
 
 class VoiceAnalyzer {
   AudioRecorder? recorder;
-  RecordConfig recorderConfig = const RecordConfig();
+  RecordConfig recorderConfig =
+      const RecordConfig(encoder: AudioEncoder.pcm16bits);
   Queue<Uint8List> buffer = Queue<Uint8List>();
-  StreamController<Uint8List> bufferController = StreamController();
   bool isPlaying = false, isForwardingSnapshots = false;
   Duration playDelay = const Duration();
   PitchDetector pitchDetector = PitchDetector();
@@ -34,16 +34,14 @@ class VoiceAnalyzer {
       if (hasPermission) {
         recorder?.startStream(recorderConfig).then((recorderStream) {
           recorderStream.listen((data) {
-            // Don't let more than 100 packets pile up
+            // print('Got packet');
+            // Don't let more than 128 packets pile up
             while (buffer.length > 128) {
               buffer.removeFirst();
             }
             // Add this data packet to the end
             buffer.add(data);
           });
-        }, onError: (err) {
-          print('Stream start error!');
-          throw err;
         });
       } else {
         throw Exception('Failed to get permission');
@@ -58,22 +56,46 @@ class VoiceAnalyzer {
   // Yields a single VocalStats instance based on the most
   // recent data.
   Future<VocalStats> getSnapshot() async {
-    VocalStats out = VocalStats(const [0.0, 0.0, 0.0, 0.0]);
+    VocalStats out = VocalStats(const [-1.0, -1.0, -1.0, -1.0]);
 
     // Avoid using empty buffer or buffer that is already in use
     if (isPlaying || buffer.isEmpty) {
       return out;
     }
-    final data = buffer.first;
+    final Uint8List data = buffer.first;
 
     // Extract pitch (easy part)
+    // print('Getting pitch...');
     final result = await pitchDetector.getPitchFromIntBuffer(data);
     out.averagePitch = result.pitch;
 
+    if (out.averagePitch == -1.0) {
+      // Some sort of error case, IDK
+      out.resonanceMeasure = -1.0;
+      return out;
+    }
+
+    // Some preprocessing
+    const step = 16;
+    List<double> processedData = List<double>.empty(growable: true);
+
+    for (int i = 0; i < data.length; i += step) {
+      double avg = 0.0;
+      for (int j = i; j < i + step; j++) {
+        avg += data[j];
+      }
+      avg /= step;
+
+      processedData.add(avg);
+    }
+
     // Extract formants (hard part)
+    // print('Processing packet of length ${processedData.length}');
+    // print('Getting F1...');
     final f1 = await getF1(
-        data, out.averagePitch, recorderConfig.sampleRate.toDouble());
+        processedData, out.averagePitch, recorderConfig.sampleRate.toDouble());
     out.resonanceMeasure = f1;
+    // print('Got it!');
 
     // Return extracted statistics object
     return out;
@@ -106,20 +128,18 @@ class VoiceAnalyzer {
       final toPlay = buffer.removeFirst();
       SoundPlayer.playFromBytes(toPlay);
     });
-    bufferController.addStream(await recorder!.startStream(recorderConfig));
   }
 
   // Stop playing audio.
   void endPlayStreamWithDelay() {
     recorder?.cancel();
-    bufferController.close();
     isPlaying = false;
   }
 
   // Register a callback to receive snapshots periodically upon
   // microphone update. This also cancels any existing
   // subscriptions.
-  void beginSnapshots(double seconds, callback) async {
+  void beginSnapshots(double seconds, callback) {
     if (isPlaying) {
       endPlayStreamWithDelay();
     } else if (isForwardingSnapshots) {
@@ -127,26 +147,25 @@ class VoiceAnalyzer {
     } else if (recorder == null) {
       return;
     }
+
     isForwardingSnapshots = true;
     playDelay = Duration(
         seconds: seconds.floor(), milliseconds: (seconds * 1000).floor());
 
-    Timer.periodic(playDelay, (timer) async {
+    Timer.periodic(playDelay, (timer) {
       if (!isForwardingSnapshots) {
         timer.cancel();
         return;
       } else if (buffer.isEmpty) {
         return;
       }
-      callback(getSnapshot());
+      getSnapshot().then(callback);
     });
-    bufferController.addStream(await recorder!.startStream(recorderConfig));
   }
 
   // Stop playing audio.
   void endSnapshots() {
     recorder?.cancel();
-    bufferController.close();
     isForwardingSnapshots = false;
   }
 }

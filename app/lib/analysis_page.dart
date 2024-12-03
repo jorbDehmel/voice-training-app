@@ -16,6 +16,7 @@ class AnalysisPageState extends State<AnalysisPage> {
   ui.Image? _icon;
   double x = 0;
   double y = 0;
+  VoiceAnalyzer? analyzer;
   Color status = Colors.red;
   late SendPort sendPort;
 
@@ -24,12 +25,18 @@ class AnalysisPageState extends State<AnalysisPage> {
     super.initState();
     _loadIcon();
 
-    VoiceAnalyzer a = VoiceAnalyzer();
-    a.beginSnapshots(0.01, (VocalStats snapshot) {
+    analyzer = VoiceAnalyzer();
+    analyzer?.beginSnapshots(0.1, (VocalStats snapshot) {
       setState(() {
+        print('(${snapshot.averagePitch}, ${snapshot.resonanceMeasure})');
+        status = Colors.green;
+
+        if (snapshot.averagePitch < 0.0 || snapshot.resonanceMeasure < 0.0) {
+          return;
+        }
+
         x = snapshot.averagePitch;
         y = snapshot.resonanceMeasure;
-        status = Colors.green;
       });
     });
 

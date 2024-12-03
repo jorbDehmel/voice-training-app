@@ -16,7 +16,7 @@ Gets F1 (very inaccurately). Uses order 3 polynomials. This
 should be within about 50% relative error
 https://chatgpt.com/share/6707f4fd-18a4-8009-8846-27f109be7bd7
 */
-Future<double> getF1(signal, double f0, double sampleRate) async {
+Future<double> getF1(List<double> signal, double f0, double sampleRate) async {
   // Compute LPC on the filtered signal
   final autocorr = autocorrelate(signal);
   final R = autocorr.getRange(0, order + 1).toList();

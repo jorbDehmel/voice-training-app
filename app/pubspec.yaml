@@ -26,5 +26,6 @@ dev_dependencies:
 
 flutter:
   assets:
-    [test_data/]
+    - test_data/
+    - assets/
   uses-material-design: true

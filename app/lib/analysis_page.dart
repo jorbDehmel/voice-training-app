@@ -28,7 +28,6 @@ class AnalysisPageState extends State<AnalysisPage> {
     analyzer = VoiceAnalyzer();
     analyzer?.beginSnapshots(0.1, (VocalStats snapshot) {
       setState(() {
-        print('(${snapshot.averagePitch}, ${snapshot.resonanceMeasure})');
         status = Colors.green;
 
         if (snapshot.averagePitch < 0.0 || snapshot.resonanceMeasure < 0.0) {
@@ -51,17 +50,6 @@ class AnalysisPageState extends State<AnalysisPage> {
     //     x = message.averagePitch;
     //     y = message.resonanceMeasure;
     //     status = Colors.green;
-    //   });
-    // });
-
-    // () async {
-    //   await Isolate.spawn(analysisWorkerMain, readPort.sendPort);
-    // };
-
-    // readPort.listen((dynamic message) async {
-    //   setState(() {
-    //     x = message[0];
-    //     y = message[1];
     //   });
     // });
   }

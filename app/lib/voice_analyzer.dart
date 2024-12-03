@@ -34,7 +34,6 @@ class VoiceAnalyzer {
       if (hasPermission) {
         recorder?.startStream(recorderConfig).then((recorderStream) {
           recorderStream.listen((data) {
-            // print('Got packet');
             // Don't let more than 128 packets pile up
             while (buffer.length > 128) {
               buffer.removeFirst();
@@ -56,7 +55,7 @@ class VoiceAnalyzer {
   // Yields a single VocalStats instance based on the most
   // recent data.
   Future<VocalStats> getSnapshot() async {
-    VocalStats out = VocalStats(const [-1.0, -1.0, -1.0, -1.0]);
+    VocalStats out = VocalStats(-1.0, -1.0);
 
     // Avoid using empty buffer or buffer that is already in use
     if (isPlaying || buffer.isEmpty) {
@@ -65,18 +64,17 @@ class VoiceAnalyzer {
     final Uint8List data = buffer.first;
 
     // Extract pitch (easy part)
-    // print('Getting pitch...');
     final result = await pitchDetector.getPitchFromIntBuffer(data);
     out.averagePitch = result.pitch;
 
-    if (out.averagePitch == -1.0) {
-      // Some sort of error case, IDK
+    if (out.averagePitch < 0.0) {
+      // Failed to fetch F0
       out.resonanceMeasure = -1.0;
       return out;
     }
 
     // Some preprocessing
-    const step = 16;
+    final int step = data.length ~/ 256;
     List<double> processedData = List<double>.empty(growable: true);
 
     for (int i = 0; i < data.length; i += step) {
@@ -90,12 +88,9 @@ class VoiceAnalyzer {
     }
 
     // Extract formants (hard part)
-    // print('Processing packet of length ${processedData.length}');
-    // print('Getting F1...');
     final f1 = await getF1(
         processedData, out.averagePitch, recorderConfig.sampleRate.toDouble());
     out.resonanceMeasure = f1;
-    // print('Got it!');
 
     // Return extracted statistics object
     return out;

@@ -32,19 +32,21 @@ class VoiceAnalyzer {
     // Check validity of recorder
     recorder?.hasPermission().then((hasPermission) {
       if (hasPermission) {
-        recorder?.isRecording().then((isRecording) {
-          if (isRecording) {
-            // Register buffer handler lambda
-            bufferController.stream.listen((data) {
-              // Don't let more than 100 packets pile up
-              while (buffer.length > 128) {
-                buffer.removeFirst();
-              }
-              // Add this data packet to the end
-              buffer.add(data);
-            });
-          }
+        recorder?.startStream(recorderConfig).then((recorderStream) {
+          recorderStream.listen((data) {
+            // Don't let more than 100 packets pile up
+            while (buffer.length > 128) {
+              buffer.removeFirst();
+            }
+            // Add this data packet to the end
+            buffer.add(data);
+          });
+        }, onError: (err) {
+          print('Stream start error!');
+          throw err;
         });
+      } else {
+        throw Exception('Failed to get permission');
       }
     });
   }

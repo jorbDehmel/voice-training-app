@@ -24,19 +24,28 @@ class AnalysisPageState extends State<AnalysisPage> {
     super.initState();
     _loadIcon();
 
-    workerManager.executeWithPort<void, VocalStats>((SendPort sendPort) async {
-      VoiceAnalyzer a = VoiceAnalyzer();
-      a.beginSnapshots(0.01, (VocalStats snapshot) {
-        List<double> l = [snapshot.averagePitch, snapshot.resonanceMeasure];
-        sendPort.send(l);
-      });
-    }, onMessage: (VocalStats message) {
+    VoiceAnalyzer a = VoiceAnalyzer();
+    a.beginSnapshots(0.01, (VocalStats snapshot) {
       setState(() {
-        x = message.averagePitch;
-        y = message.resonanceMeasure;
+        x = snapshot.averagePitch;
+        y = snapshot.resonanceMeasure;
         status = Colors.green;
       });
     });
+
+    //   workerManager.executeWithPort<void, VocalStats>((SendPort sendPort) async {
+    //   VoiceAnalyzer a = VoiceAnalyzer();
+    //   a.beginSnapshots(0.01, (VocalStats snapshot) {
+    //     List<double> l = [snapshot.averagePitch, snapshot.resonanceMeasure];
+    //     sendPort.send(l);
+    //   });
+    // }, onMessage: (VocalStats message) {
+    //   setState(() {
+    //     x = message.averagePitch;
+    //     y = message.resonanceMeasure;
+    //     status = Colors.green;
+    //   });
+    // });
 
     // () async {
     //   await Isolate.spawn(analysisWorkerMain, readPort.sendPort);

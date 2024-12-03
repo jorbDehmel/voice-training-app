@@ -6,6 +6,8 @@ import 'dart:ui' as ui;
 import 'voice_analyzer.dart';
 
 class AnalysisPage extends StatefulWidget {
+  const AnalysisPage({super.key});
+
   @override
   AnalysisPageState createState() => AnalysisPageState();
 }
@@ -21,26 +23,18 @@ class AnalysisPageState extends State<AnalysisPage> {
     super.initState();
     _loadIcon();
 
-    () async {
-      await workerManager.init();
-    };
-
-    workerManager.executeWithPort<void, VocalStats>(
-      (SendPort sendPort) async {
-        VoiceAnalyzer a = VoiceAnalyzer();
-        a.beginSnapshots(0.01, (VocalStats snapshot) {
-          List<double> l = [snapshot.averagePitch, snapshot.resonanceMeasure];
-          sendPort.send(l);
-        });
-      },
-      onMessage: (VocalStats message) {
-        setState(() {
-          x = message.averagePitch;
-          y = message.resonanceMeasure;
-        });
-      },
-      priority: WorkPriority.immediately,
-    );
+    workerManager.executeWithPort<void, VocalStats>((SendPort sendPort) async {
+      VoiceAnalyzer a = VoiceAnalyzer();
+      a.beginSnapshots(0.01, (VocalStats snapshot) {
+        List<double> l = [snapshot.averagePitch, snapshot.resonanceMeasure];
+        sendPort.send(l);
+      });
+    }, onMessage: (VocalStats message) {
+      setState(() {
+        x = message.averagePitch;
+        y = message.resonanceMeasure;
+      });
+    });
 
     // () async {
     //   await Isolate.spawn(analysisWorkerMain, readPort.sendPort);
@@ -57,7 +51,7 @@ class AnalysisPageState extends State<AnalysisPage> {
   Future<void> _loadIcon() async {
     final completer = Completer<ui.Image>();
     final ImageStream stream =
-        AssetImage('assets/icon.png').resolve(ImageConfiguration());
+        const AssetImage('assets/icon.png').resolve(const ImageConfiguration());
     stream.addListener(ImageStreamListener((ImageInfo info, bool _) {
       completer.complete(info.image);
     }));
@@ -69,7 +63,7 @@ class AnalysisPageState extends State<AnalysisPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Graph with Icon'),
+        title: const Text('Graph with Icon'),
       ),
       body: CustomPaint(
         painter: GraphPainter(x: x, y: y, iconImage: _icon),
@@ -102,7 +96,7 @@ class GraphPainter extends CustomPainter {
 
     // Draw the icon if it's loaded
     if (iconImage != null) {
-      final iconSize = 30.0; // Set a fixed icon size
+      const iconSize = 30.0; // Set a fixed icon size
       final dstRect = Rect.fromCenter(
           center: Offset(x, y), width: iconSize, height: iconSize);
       canvas.drawImageRect(

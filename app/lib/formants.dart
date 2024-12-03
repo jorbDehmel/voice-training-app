@@ -18,7 +18,7 @@ https://chatgpt.com/share/6707f4fd-18a4-8009-8846-27f109be7bd7
 */
 Future<double> getF1(signal, double f0, double sampleRate) async {
   // Compute LPC on the filtered signal
-  var autocorr = autocorrelate(signal);
+  final autocorr = autocorrelate(signal);
   final R = autocorr.getRange(0, order + 1).toList();
   final coeffMatrix = toeplitz(R.getRange(0, R.length - 1).toList());
   final knownVals = List.generate(R.length - 1, (i) {

@@ -4,9 +4,11 @@ elsewhere.
 */
 
 import 'package:flutter/material.dart';
+import 'package:worker_manager/worker_manager.dart';
 import './home_page.dart';
 
-void main() {
+void main() async {
+  await workerManager.init();
   runApp(const VoiceApp());
 }
 

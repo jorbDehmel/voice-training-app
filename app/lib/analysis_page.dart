@@ -16,6 +16,7 @@ class AnalysisPageState extends State<AnalysisPage> {
   ui.Image? _icon;
   double x = 0;
   double y = 0;
+  Color status = Colors.red;
   late SendPort sendPort;
 
   @override
@@ -33,6 +34,7 @@ class AnalysisPageState extends State<AnalysisPage> {
       setState(() {
         x = message.averagePitch;
         y = message.resonanceMeasure;
+        status = Colors.green;
       });
     });
 
@@ -66,7 +68,7 @@ class AnalysisPageState extends State<AnalysisPage> {
         title: const Text('Graph with Icon'),
       ),
       body: CustomPaint(
-        painter: GraphPainter(x: x, y: y, iconImage: _icon),
+        painter: GraphPainter(x: x, y: y, iconImage: _icon, status: status),
         child: Container(),
       ),
     );
@@ -77,13 +79,18 @@ class GraphPainter extends CustomPainter {
   final double x;
   final double y;
   final ui.Image? iconImage;
+  final Color status;
 
-  GraphPainter({required this.x, required this.y, required this.iconImage});
+  GraphPainter(
+      {required this.x,
+      required this.y,
+      required this.iconImage,
+      required this.status});
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.black
+      ..color = status
       ..strokeWidth = 2;
 
     // Draw X-axis

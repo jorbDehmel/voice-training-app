@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:isolate';
-
+import 'package:voice_training_app/vocal_stats.dart';
+import 'package:worker_manager/worker_manager.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'voice_analyzer.dart';
@@ -14,7 +14,6 @@ class AnalysisPageState extends State<AnalysisPage> {
   ui.Image? _icon;
   double x = 0;
   double y = 0;
-  ReceivePort readPort = ReceivePort();
   late SendPort sendPort;
 
   @override
@@ -23,15 +22,36 @@ class AnalysisPageState extends State<AnalysisPage> {
     _loadIcon();
 
     () async {
-      await Isolate.spawn(analysisWorkerMain, readPort.sendPort);
+      await workerManager.init();
     };
 
-    readPort.listen((dynamic message) async {
-      setState(() {
-        x = message[0];
-        y = message[1];
-      });
-    });
+    workerManager.executeWithPort<void, VocalStats>(
+      (SendPort sendPort) async {
+        VoiceAnalyzer a = VoiceAnalyzer();
+        a.beginSnapshots(0.01, (VocalStats snapshot) {
+          List<double> l = [snapshot.averagePitch, snapshot.resonanceMeasure];
+          sendPort.send(l);
+        });
+      },
+      onMessage: (VocalStats message) {
+        setState(() {
+          x = message.averagePitch;
+          y = message.resonanceMeasure;
+        });
+      },
+      priority: WorkPriority.immediately,
+    );
+
+    // () async {
+    //   await Isolate.spawn(analysisWorkerMain, readPort.sendPort);
+    // };
+
+    // readPort.listen((dynamic message) async {
+    //   setState(() {
+    //     x = message[0];
+    //     y = message[1];
+    //   });
+    // });
   }
 
   Future<void> _loadIcon() async {

@@ -6,22 +6,12 @@ microphone stream.
 
 import 'dart:async';
 import 'dart:collection';
-import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:record/record.dart';
 import 'package:sound_library/sound_library.dart';
 import 'package:pitch_detector_dart/pitch_detector.dart';
 import 'vocal_stats.dart';
 import 'formants.dart';
-
-// To be used as a worker thread
-void analysisWorkerMain(SendPort outputPort) {
-  VoiceAnalyzer a = VoiceAnalyzer();
-  a.beginSnapshots(0.01, (VocalStats snapshot) {
-    List<double> l = [snapshot.averagePitch, snapshot.resonanceMeasure];
-    outputPort.send(l);
-  });
-}
 
 class VoiceAnalyzer {
   AudioRecorder? recorder;

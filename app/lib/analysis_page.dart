@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:voice_training_app/vocal_stats.dart';
 import 'package:worker_manager/worker_manager.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +27,7 @@ class AnalysisPageState extends State<AnalysisPage> {
     _loadIcon();
 
     analyzer = VoiceAnalyzer();
-    analyzer?.beginSnapshots(0.1, (VocalStats snapshot) {
+    analyzer?.beginSnapshots(0.01, (VocalStats snapshot) {
       setState(() {
         status = Colors.green;
 
@@ -34,8 +35,18 @@ class AnalysisPageState extends State<AnalysisPage> {
           return;
         }
 
-        x = snapshot.averagePitch;
-        y = snapshot.resonanceMeasure;
+        print('F0: ${snapshot.averagePitch}');
+        print('F1: ${snapshot.resonanceMeasure}');
+
+        x = snapshot.averagePitch / 500.0;
+        y = snapshot.resonanceMeasure / 15000.0;
+
+        x = min(x, 1);
+        y = min(y, 1);
+        x = max(x, 0);
+        y = max(y, 0);
+
+        y = 1 - y;
       });
     });
 
@@ -109,7 +120,9 @@ class GraphPainter extends CustomPainter {
     if (iconImage != null) {
       const iconSize = 30.0; // Set a fixed icon size
       final dstRect = Rect.fromCenter(
-          center: Offset(x, y), width: iconSize, height: iconSize);
+          center: Offset(x * size.width, y * size.height),
+          width: iconSize,
+          height: iconSize);
       canvas.drawImageRect(
           iconImage!,
           Rect.fromLTWH(

@@ -34,8 +34,8 @@ class VoiceAnalyzer {
       if (hasPermission) {
         recorder?.startStream(recorderConfig).then((recorderStream) {
           recorderStream.listen((data) {
-            // Don't let more than 128 packets pile up
-            while (buffer.length > 128) {
+            // Don't let more than 16 packets pile up
+            while (buffer.length > 16) {
               buffer.removeFirst();
             }
             // Add this data packet to the end

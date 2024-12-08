@@ -1,16 +1,16 @@
 '''
+Formant generator class
 '''
 
 import sys
 import numpy as np
 import scipy.signal as signal
 import scipy.io.wavfile as wav
-import scipy.fft as fft
-from matplotlib import pyplot as plt
 
 
 class TestSignalGenerator:
     '''
+    Generates formant test data
     '''
 
     def __init__(self, sample_rate):
@@ -64,13 +64,8 @@ if __name__ == '__main__':
     target: str = sys.argv[4]
 
     gen = TestSignalGenerator(44100)
-    sig = gen.generate_test_signal(1.0, f0, f1, f2)
+    sig = gen.generate_test_signal(10.0, f0, f1, f2)
 
-    fft_data = fft.fftshift(fft.fft(sig))
-    plt.vlines([f0, f1, f2], ymin=min(fft_data), ymax=max(fft_data))
-    plt.plot(fft_data)
-    plt.show()
-
-    wav.write(target, 44100, sig.astype(np.uint8))
+    wav.write(target, 44100, sig.astype(np.int16))
 
     sys.exit(0)

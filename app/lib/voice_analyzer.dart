@@ -7,6 +7,7 @@ microphone stream.
 import 'dart:async';
 import 'dart:collection';
 import 'dart:typed_data';
+import 'package:pitch_detector_dart/util/pcm_util_extensions.dart';
 import 'package:record/record.dart';
 import 'package:sound_library/sound_library.dart';
 import 'package:pitch_detector_dart/pitch_detector.dart';
@@ -15,8 +16,12 @@ import 'formants.dart';
 
 class VoiceAnalyzer {
   AudioRecorder? recorder;
-  RecordConfig recorderConfig =
-      const RecordConfig(encoder: AudioEncoder.pcm16bits);
+  RecordConfig recorderConfig = const RecordConfig(
+      encoder: AudioEncoder.pcm16bits,
+      numChannels: 1,
+      autoGain: true,
+      echoCancel: true,
+      noiseSuppress: true);
   Queue<Uint8List> buffer = Queue<Uint8List>();
   bool isPlaying = false, isForwardingSnapshots = false;
   Duration playDelay = const Duration();
@@ -61,36 +66,38 @@ class VoiceAnalyzer {
     if (isPlaying || buffer.isEmpty) {
       return out;
     }
-    final Uint8List data = buffer.first;
+
+    var rawData = buffer.first;
+    if (rawData.length > pitchDetector.bufferSize * 32) {
+      rawData = rawData.sublist(0, pitchDetector.bufferSize * 32);
+    }
+    var data = rawData.convertPCM16ToFloat();
 
     // Extract pitch (easy part)
-    final result = await pitchDetector.getPitchFromIntBuffer(data);
-    out.averagePitch = result.pitch;
+    final result = await pitchDetector.getPitchFromFloatBuffer(data);
+    out.averagePitch = result.pitch * 2.0;
 
-    if (out.averagePitch < 0.0) {
+    if (out.averagePitch < 0.0 || out.averagePitch > 20000.0) {
       // Failed to fetch F0
       out.resonanceMeasure = -1.0;
       return out;
     }
 
-    // Some preprocessing
-    final int step = data.length ~/ 256;
-    List<double> processedData = List<double>.empty(growable: true);
-
-    for (int i = 0; i < data.length; i += step) {
-      double avg = 0.0;
-      for (int j = i; j < i + step; j++) {
-        avg += data[j];
-      }
-      avg /= step;
-
-      processedData.add(avg);
-    }
-
     // Extract formants (hard part)
+    var PCMBuffer = rawData.buffer.asByteData();
+    List<double> floatList =
+        List<double>.generate(rawData.length ~/ 2, (offset) {
+      return PCMBuffer.getInt16(offset).toDouble();
+    });
     final f1 = await getF1(
-        processedData, out.averagePitch, recorderConfig.sampleRate.toDouble());
+        floatList, out.averagePitch, recorderConfig.sampleRate.toDouble());
     out.resonanceMeasure = f1;
+
+    if (f1 > 20000.0) {
+      // Failed to fetch f1
+      out.averagePitch = -1.0;
+      out.resonanceMeasure = -1.0;
+    }
 
     // Return extracted statistics object
     return out;

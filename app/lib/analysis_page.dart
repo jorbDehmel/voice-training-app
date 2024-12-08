@@ -27,7 +27,7 @@ class AnalysisPageState extends State<AnalysisPage> {
     _loadIcon();
 
     analyzer = VoiceAnalyzer();
-    analyzer?.beginSnapshots(0.01, (VocalStats snapshot) {
+    analyzer?.beginSnapshots(0.1, (VocalStats snapshot) {
       setState(() {
         status = Colors.green;
 
@@ -38,8 +38,8 @@ class AnalysisPageState extends State<AnalysisPage> {
         print('F0: ${snapshot.averagePitch}');
         print('F1: ${snapshot.resonanceMeasure}');
 
-        x = snapshot.averagePitch / 500.0;
-        y = snapshot.resonanceMeasure / 15000.0;
+        x = snapshot.averagePitch / 1000.0;
+        y = snapshot.resonanceMeasure / 20000.0;
 
         x = min(x, 1);
         y = min(y, 1);

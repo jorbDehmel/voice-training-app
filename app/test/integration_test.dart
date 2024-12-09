@@ -7,7 +7,6 @@ import 'package:pitch_detector_dart/pitch_detector.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:voice_training_app/formants.dart';
-import 'package:voice_training_app/voice_analyzer.dart';
 
 abs(x) => x < 0.0 ? -x : x;
 
@@ -24,7 +23,6 @@ main() async {
     for (var c in cases) {
       final List<double> inp = List<double>.from(c['input']);
       final List<double> out = List<double>.from(c['output']);
-      final double expF0 = out[0];
       final double expF1 = out[1];
 
       PitchDetector p =
